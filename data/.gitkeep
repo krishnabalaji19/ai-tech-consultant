@@ -1,0 +1,2 @@
+# This folder is gitignored except this keep file.
+# Runtime crawls, Chroma, and SQLite live here and must not be committed.
