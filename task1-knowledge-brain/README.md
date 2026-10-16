@@ -11,4 +11,4 @@ Reads Brilliant Directories help articles, stores them, and answers questions wi
 - `templates/` — a simple chat page.
 - `tests/` — automated checks.
 
-Stage 0: empty placeholders only.
+Stage 1: run the crawler from the repo root with `make crawl`. HTML and `data/crawl_manifest.json` are written at the repo root, not inside this folder.

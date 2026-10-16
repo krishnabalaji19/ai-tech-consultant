@@ -10,13 +10,13 @@ Three Python apps share one Knowledge Brain over HTTP:
 
 ## Status
 
-Stage 0: folder layout and git only. Nothing to run yet.
+Stage 1: polite crawler (no AI). Saves HTML and a resume manifest under `data/`.
 
-## Setup (after later stages)
+## Setup
 
-1. Copy `.env.example` to `.env` (you already have `.env` with `GEMINI_API_KEY`).
-2. Use Python 3. Create one virtual environment at the repo root when we add dependencies.
-3. `make run` will start all three services (not implemented yet).
+1. Copy `.env.example` to `.env` if needed (you already have `.env`).
+2. `make venv` then `make crawl-test` then `make crawl`.
+3. `make run` for all three services is not implemented yet.
 
 ## Honest limits (planned)
 
