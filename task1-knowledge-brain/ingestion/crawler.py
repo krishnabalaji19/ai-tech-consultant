@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import time
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
@@ -37,6 +38,68 @@ def html_filename_for(url: str) -> str:
 
 def content_hash(body: bytes) -> str:
     return hashlib.sha256(body).hexdigest()
+
+
+def select_crawl_targets(
+    entries: list[SitemapEntry],
+    *,
+    is_url_allowed: Callable[[str], bool],
+    settings: CrawlSettings,
+) -> tuple[list[SitemapEntry], list[SitemapEntry]]:
+    """Pick pages to download: respect robots, prefer real articles, cap count."""
+    blocked: list[SitemapEntry] = []
+    candidates: list[SitemapEntry] = []
+    for entry in entries:
+        if not is_url_allowed(entry.url):
+            blocked.append(entry)
+            continue
+        if settings.path_contains and settings.path_contains not in entry.url:
+            continue
+        candidates.append(entry)
+
+    priority: list[SitemapEntry] = []
+    rest: list[SitemapEntry] = []
+    for entry in candidates:
+        haystack = entry.url.lower()
+        if any(part in haystack for part in settings.priority_substrings):
+            priority.append(entry)
+        else:
+            rest.append(entry)
+
+    chosen: list[SitemapEntry] = []
+    seen: set[str] = set()
+    for entry in [*priority, *rest]:
+        if entry.url in seen:
+            continue
+        seen.add(entry.url)
+        chosen.append(entry)
+        if len(chosen) >= settings.max_pages:
+            break
+    return chosen, blocked
+
+
+def mark_unselected_removed(
+    manifest: dict,
+    chosen_urls: set[str],
+    data_dir: Path,
+) -> int:
+    """Mark pages that dropped out of the crawl set, and delete their HTML."""
+    removed = 0
+    for url, raw in list(manifest.get("pages", {}).items()):
+        if url in chosen_urls:
+            continue
+        record = record_from_dict(url, raw)
+        if record.status == "removed":
+            continue
+        if record.html_path:
+            html_file = data_dir / record.html_path
+            if html_file.exists():
+                html_file.unlink()
+        record.status = "removed"
+        record.error = "Not in the current crawl set"
+        upsert_page(manifest, record)
+        removed += 1
+    return removed
 
 
 class RequestGate:
@@ -218,24 +281,18 @@ async def run_crawl(settings: CrawlSettings | None = None) -> dict[str, int]:
         entries = await fetch_sitemap(client, settings.sitemap_url)
         manifest = load_manifest(MANIFEST_PATH, settings.sitemap_url)
         manifest_lock = asyncio.Lock()
-        chosen: list[SitemapEntry] = []
         statuses: list[str] = []
+        chosen, _blocked = select_crawl_targets(
+            entries,
+            is_url_allowed=lambda url: is_allowed(robots, settings.user_agent, url),
+            settings=settings,
+        )
 
+        chosen_urls = {entry.url for entry in chosen}
+        removed_now = 0
         async with manifest_lock:
-            for entry in entries:
-                if not is_allowed(robots, settings.user_agent, entry.url):
-                    upsert_page(
-                        manifest,
-                        PageRecord(
-                            url=entry.url,
-                            status="skipped_robots",
-                            last_modified=entry.last_modified,
-                            error="Disallowed by robots.txt",
-                        ),
-                    )
-                    statuses.append("skipped_robots")
-                    continue
-                chosen.append(entry)
+            removed_now = mark_unselected_removed(manifest, chosen_urls, DATA_DIR)
+            for entry in chosen:
                 existing_raw = manifest["pages"].get(entry.url)
                 if existing_raw is None:
                     upsert_page(
@@ -246,8 +303,6 @@ async def run_crawl(settings: CrawlSettings | None = None) -> dict[str, int]:
                             last_modified=entry.last_modified,
                         ),
                     )
-                if len(chosen) >= settings.max_pages:
-                    break
             save_manifest(MANIFEST_PATH, manifest)
 
         gate = RequestGate(settings.max_concurrency, settings.delay_seconds)
@@ -283,4 +338,5 @@ async def run_crawl(settings: CrawlSettings | None = None) -> dict[str, int]:
 
     counts = dict(Counter(statuses))
     counts["selected_pages"] = len(chosen)
+    counts["removed"] = removed_now
     return counts

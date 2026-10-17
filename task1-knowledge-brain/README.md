@@ -11,4 +11,6 @@ Reads Brilliant Directories help articles, stores them, and answers questions wi
 - `templates/` — a simple chat page.
 - `tests/` — automated checks.
 
-Stage 1: run the crawler from the repo root with `make crawl`. HTML and `data/crawl_manifest.json` are written at the repo root, not inside this folder.
+Stage 2: `make crawl` then `make ingest` from the repo root. Search with `python3 -m retrieval.search "how do I refund a payment"` from this folder (using the repo `.venv`).
+
+The crawler prefers `/solutions/articles/` URLs so the 30-page cap is real articles, not category listings.

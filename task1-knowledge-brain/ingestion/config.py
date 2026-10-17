@@ -12,9 +12,14 @@ TASK1_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = TASK1_ROOT.parent
 DATA_DIR = REPO_ROOT / "data"
 RAW_HTML_DIR = DATA_DIR / "raw_html"
+PARSED_DIR = DATA_DIR / "parsed"
+CHROMA_DIR = DATA_DIR / "chroma"
 MANIFEST_PATH = DATA_DIR / "crawl_manifest.json"
+INGEST_MANIFEST_PATH = DATA_DIR / "ingest_manifest.json"
 
 load_dotenv(REPO_ROOT / ".env")
+
+CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "help_chunks")
 
 
 def _env_int(name: str, default: int) -> int:
@@ -42,6 +47,8 @@ class CrawlSettings:
     max_retries: int
     retry_base_seconds: float
     timeout_seconds: float
+    path_contains: str
+    priority_substrings: tuple[str, ...]
 
 
 def load_settings() -> CrawlSettings:
@@ -64,4 +71,21 @@ def load_settings() -> CrawlSettings:
         max_retries=_env_int("CRAWL_MAX_RETRIES", 4),
         retry_base_seconds=_env_float("CRAWL_RETRY_BASE_SECONDS", 1.0),
         timeout_seconds=_env_float("CRAWL_TIMEOUT_SECONDS", 30.0),
+        path_contains=os.getenv("CRAWL_PATH_CONTAINS", "/solutions/articles/"),
+        priority_substrings=tuple(
+            part.strip().lower()
+            for part in os.getenv("CRAWL_PRIORITY_SUBSTRINGS", "refund").split(",")
+            if part.strip()
+        ),
+    )
+
+
+@dataclass(frozen=True)
+class EmbedSettings:
+    model_name: str
+
+
+def load_embed_settings() -> EmbedSettings:
+    return EmbedSettings(
+        model_name=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
     )

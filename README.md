@@ -10,13 +10,15 @@ Three Python apps share one Knowledge Brain over HTTP:
 
 ## Status
 
-Stage 1: polite crawler (no AI). Saves HTML and a resume manifest under `data/`.
+Stage 2: polite crawl, clean JSON, local MiniLM embeddings, Chroma search. No chat API yet.
 
 ## Setup
 
 1. Copy `.env.example` to `.env` if needed (you already have `.env`).
-2. `make venv` then `make crawl-test` then `make crawl`.
-3. `make run` for all three services is not implemented yet.
+2. `make venv`
+3. `make test`
+4. `make crawl` then `make ingest`
+5. From `task1-knowledge-brain`: `../.venv/bin/python -m retrieval.search "how do I refund a payment"`
 
 ## Honest limits (planned)
 
