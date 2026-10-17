@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knowledge Brain</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    h1 { font-size: 1.6rem; }
+    textarea { width: 100%; min-height: 5rem; font: inherit; padding: 0.5rem; }
+    button { font: inherit; padding: 0.4rem 0.9rem; margin-top: 0.5rem; }
+    .box { margin-top: 1.2rem; padding: 0.9rem; border: 1px solid #ccc; }
+    .unknown { background: #fff4d6; border-color: #c9a227; }
+    .error { background: #fde8e8; border-color: #b00020; }
+    .ok { background: #f3f7f2; }
+    ul { padding-left: 1.2rem; }
+    .muted { color: #555; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <h1>Knowledge Brain</h1>
+  <p class="muted">Ask a product question. Answers come from crawled help articles only.</p>
+  <form id="ask-form">
+    <label for="question">Question</label>
+    <textarea id="question" name="question" required placeholder="How do I refund a payment?"></textarea>
+    <button type="submit">Ask</button>
+  </form>
+  <div id="result" hidden></div>
+  <script>
+    const form = document.getElementById("ask-form");
+    const result = document.getElementById("result");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      result.hidden = false;
+      result.className = "box";
+      result.textContent = "Looking up articles…";
+      const question = document.getElementById("question").value;
+      try {
+        const response = await fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Request failed");
+        }
+        render(data);
+      } catch (err) {
+        result.className = "box error";
+        result.textContent = "Error: " + err.message;
+      }
+    });
+    function render(data) {
+      if (data.status === "error") {
+        result.className = "box error";
+        result.innerHTML = "<strong>The knowledge service hit an error.</strong><p></p>";
+        result.querySelector("p").textContent = data.answer;
+        return;
+      }
+      if (data.status === "insufficient_evidence") {
+        result.className = "box unknown";
+        result.innerHTML =
+          "<strong>I don't know, sent to a human expert.</strong>" +
+          "<p></p><p class='muted'></p>";
+        result.querySelector("p").textContent = data.answer;
+        result.querySelector(".muted").textContent =
+          data.escalation_id ? ("Escalation #" + data.escalation_id) : "";
+        return;
+      }
+      result.className = "box ok";
+      const sources = (data.sources || []).map(
+        (s) => "<li><a href='" + s.url + "' target='_blank' rel='noreferrer'>" +
+               (s.title || s.url) + "</a> <span class='muted'>(relevance " +
+               s.relevance + ")</span></li>"
+      ).join("");
+      const images = (data.image_refs || []).map(
+        (u) => "<li><a href='" + u + "' target='_blank' rel='noreferrer'>" + u + "</a></li>"
+      ).join("");
+      result.innerHTML =
+        "<p></p><h2>Sources</h2><ul>" + (sources || "<li>None</li>") + "</ul>" +
+        (images ? "<h2>Images</h2><ul>" + images + "</ul>" : "");
+      result.querySelector("p").textContent = data.answer;
+    }
+  </script>
+</body>
+</html>

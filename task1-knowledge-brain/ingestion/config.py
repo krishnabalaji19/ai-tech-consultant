@@ -20,6 +20,8 @@ INGEST_MANIFEST_PATH = DATA_DIR / "ingest_manifest.json"
 load_dotenv(REPO_ROOT / ".env")
 
 CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "help_chunks")
+SQLITE_PATH = DATA_DIR / "knowledge.db"
+PROMPTS_DIR = REPO_ROOT / "prompts"
 
 
 def _env_int(name: str, default: int) -> int:
@@ -88,4 +90,19 @@ class EmbedSettings:
 def load_embed_settings() -> EmbedSettings:
     return EmbedSettings(
         model_name=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
+    )
+
+
+@dataclass(frozen=True)
+class QuerySettings:
+    top_k: int
+    max_distance: float
+    prompt_path: Path
+
+
+def load_query_settings() -> QuerySettings:
+    return QuerySettings(
+        top_k=_env_int("QUERY_TOP_K", 5),
+        max_distance=_env_float("QUERY_MAX_DISTANCE", 0.85),
+        prompt_path=PROMPTS_DIR / os.getenv("QUERY_PROMPT_FILE", "query_v1.txt"),
     )

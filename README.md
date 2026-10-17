@@ -10,7 +10,7 @@ Three Python apps share one Knowledge Brain over HTTP:
 
 ## Status
 
-Stage 2: polite crawl, clean JSON, local MiniLM embeddings, Chroma search. No chat API yet.
+Stage 3: Knowledge Brain API + chat page. Default LLM is `gemini-3.5-flash-lite` (free tier; `gemini-2.0-flash` is shut down).
 
 ## Setup
 
@@ -18,7 +18,8 @@ Stage 2: polite crawl, clean JSON, local MiniLM embeddings, Chroma search. No ch
 2. `make venv`
 3. `make test`
 4. `make crawl` then `make ingest`
-5. From `task1-knowledge-brain`: `../.venv/bin/python -m retrieval.search "how do I refund a payment"`
+5. `make search` (prints distance and score)
+6. `make api` then open http://127.0.0.1:8001/
 
 ## Honest limits (planned)
 

@@ -11,6 +11,6 @@ Reads Brilliant Directories help articles, stores them, and answers questions wi
 - `templates/` — a simple chat page.
 - `tests/` — automated checks.
 
-Stage 2: `make crawl` then `make ingest` from the repo root. Search with `python3 -m retrieval.search "how do I refund a payment"` from this folder (using the repo `.venv`).
+Stage 3: from the repo root run `make crawl`, `make ingest`, then `make api`. Open http://127.0.0.1:8001/ for the chat page. `POST /query` answers only from retrieved articles.
 
 The crawler prefers `/solutions/articles/` URLs so the 30-page cap is real articles, not category listings.

@@ -35,10 +35,14 @@ def main() -> None:
         print("No chunks in the index. Run: make crawl && make ingest")
         return
     print(f'Top {len(hits)} chunks for: {query}\n')
+    print("Distance is cosine distance (lower is closer). Score is 1 - distance (higher is closer).\n")
     for i, hit in enumerate(hits, start=1):
+        distance = float(hit["distance"])
+        score = max(0.0, 1.0 - distance)
         print(f"{i}. {hit['title']}")
         print(f"   URL: {hit['url']}")
         print(f"   Section: {hit['section_heading']}")
+        print(f"   Distance: {distance:.4f}  Score: {score:.4f}")
         preview = str(hit["text"]).replace("\n", " ")
         if len(preview) > 280:
             preview = preview[:280] + "..."
