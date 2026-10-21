@@ -1,28 +1,43 @@
-# AI Tech Consultant
+# AI Tech Consultant (partial submission)
 
-Helps a software business answer product questions, draft customer emails, and turn meeting notes into a scope of work.
+Capstone for Business Labs. **Only Task 1 (Knowledge Brain) was worked on.
+Tasks 2 and 3 were not built.**
 
-Three Python apps share one Knowledge Brain over HTTP:
+## What works (tested)
+- Polite, resumable crawler for the Brilliant Directories sitemap
+  (robots.txt respected, rate limit, retries, manifest, skips unchanged pages).
+- Parser and chunker: title, headings, lists, image alt text kept per chunk.
+- Local embeddings (MiniLM) stored in Chroma. 150 pages / 755 chunks indexed.
+- Incremental re-ingest: unchanged pages skipped, removed pages deleted.
+- Search script that returns the right article for "how do I refund a payment".
+- Unit tests: [14 passing / update with your real result].
 
-1. **Task 1 Knowledge Brain** — reads help articles and answers with source URLs.
-2. **Task 2 Inbox Agent** — classifies emails and drafts replies for human approval.
-3. **Task 3 Meeting to Scope** — turns transcripts into requirements, estimates, and a proposal.
+## Partly done / not verified
+- [Query API with escalation: written with an AI coding tool, NOT fully
+  tested by me. Update this line after you try it.]
 
-## Status
+## Not done
+- Task 2 (Inbox Agent), Task 3 (Meeting to Scope).
+- Real image understanding (only alt text and nearby text are used).
+- Evaluations (20+ cases per task) and model comparison. No scores are
+  claimed because none were run.
+- Claude was not used, because I could not afford API costs.
 
-Stage 3: Knowledge Brain API + chat page. Default LLM is `gemini-3.5-flash-lite` (free tier; `gemini-2.0-flash` is shut down).
+## Known weakness (real example)
+Searching "how do I change my logo" does not return a logo article. Vector
+search always returns something, so a "too far away, say I don't know"
+cutoff is needed.
 
-## Setup
+## Run it
+    make venv
+    make test
+    make crawl
+    make ingest
+    make search
 
-1. Copy `.env.example` to `.env` if needed (you already have `.env`).
-2. `make venv`
-3. `make test`
-4. `make crawl` then `make ingest`
-5. `make search` (prints distance and score)
-6. `make api` then open http://127.0.0.1:8001/
+Secrets live in `.env` (not committed). Copy `.env.example` to `.env`.
 
-## Honest limits (planned)
-
-- First crawl is about 30 pages, not the full sitemap.
-- Screenshot understanding is simplified.
-- Default model is Gemini free tier. Claude is a config switch; we will not pay to benchmark it.
+## Honest note on tools
+I used Cursor for coding. Its free usage limit ran out, I used additional
+free accounts, and then Cursor blocked free trials on my machine during
+Stage 3. I also used Claude chat for planning and guidance.
